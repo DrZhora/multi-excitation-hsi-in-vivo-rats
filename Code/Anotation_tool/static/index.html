@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>im3 annotator</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="who">
+    <strong id="groupName">—</strong>
+    <span id="groupSub" class="dim"></span>
+  </div>
+  <div class="grow"></div>
+  <div class="bar">
+    <button id="prevGroup" title="Previous leg  ,">‹</button>
+    <span id="groupCount" class="dim">0 / 0</span>
+    <button id="nextGroup" title="Next leg  .">›</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="doneChk"> done</label>
+  <span id="status" class="status">ready</span>
+  <button id="saveBtn" title="Save work in progress  ⌘S">Save</button>
+  <button id="exportBtn" class="primary" title="Write this leg's aligned, cropped cubes and labels">Export leg</button>
+</header>
+
+<main>
+  <aside>
+    <section>
+      <h2>Legs</h2>
+      <ul id="groupList" class="rows"></ul>
+    </section>
+
+    <section>
+      <h2>Alignment <span id="alignVerdict" class="verdict"></span></h2>
+      <ul id="cubeList" class="cubes"></ul>
+      <div class="tools">
+        <button id="autoAlign" class="primary" title="Register every cube of this leg">Auto-align</button>
+        <button class="tool" data-tool="align" title="Nudge the viewed cube  A">Nudge</button>
+      </div>
+      <div class="tools">
+        <button class="vmode on" data-vmode="normal"  title="Just the cube">Normal</button>
+        <button class="vmode" data-vmode="diff"    title="|cube − reference|: black where they agree">Diff</button>
+        <button class="vmode" data-vmode="blink"   title="Flip between cube and reference">Blink</button>
+        <button class="vmode" data-vmode="checker" title="Interleaved tiles of both">Checker</button>
+      </div>
+      <p class="note" id="alignNote"></p>
+    </section>
+
+    <section>
+      <h2>Classes <button id="editClasses" class="link">edit</button></h2>
+      <ul id="classList" class="classes"></ul>
+    </section>
+
+    <section>
+      <h2>Tool</h2>
+      <div class="tools">
+        <button class="tool" data-tool="brush"   title="Brush  B">Brush</button>
+        <button class="tool" data-tool="eraser"  title="Eraser  E">Eraser</button>
+        <button class="tool" data-tool="polygon" title="Polygon  P">Polygon</button>
+        <button class="tool" data-tool="box"     title="Region box  R">Box</button>
+        <button class="tool" data-tool="fill"    title="Pour colour into an unlabelled area  G">Fill</button>
+      </div>
+      <div class="tools">
+        <button id="fillRest" title="Label every pixel still unlabelled with the current class">Fill rest</button>
+      </div>
+      <label class="row">Size <input type="range" id="brushSize" min="1" max="200" value="24">
+        <output id="brushSizeVal">24</output></label>
+      <label class="row">Overlay <input type="range" id="opacity" min="0" max="100" value="55">
+        <output id="opacityVal">55%</output></label>
+      <div class="tools">
+        <button id="boxAll" title="Set the box to everything all cubes cover">Box = overlap</button>
+        <button id="boxClear" title="Drop the box">Clear box</button>
+      </div>
+      <div class="tools">
+        <button id="undoBtn" title="Undo  ⌘Z">Undo</button>
+        <button id="redoBtn" title="Redo  ⇧⌘Z">Redo</button>
+        <button id="clearBtn" title="Erase the whole mask">Clear</button>
+      </div>
+      <p class="note" id="roiNote"></p>
+    </section>
+
+    <section>
+      <h2>Display</h2>
+      <div class="tools">
+        <button class="mode on" data-mode="single" title="One emission band">Band</button>
+        <button class="mode" data-mode="rgb"    title="Three bands as R/G/B">RGB</button>
+        <button class="mode" data-mode="mean"   title="Mean over the spectral axis">Mean</button>
+      </div>
+      <div id="singleCtl">
+        <label class="row">Band <input type="range" id="chan" min="0" max="0" value="0">
+          <output id="chanVal">0</output></label>
+      </div>
+      <div id="rgbCtl" class="hidden">
+        <label class="row r">R <input type="range" id="chR" min="0" max="0"><output id="chRVal">0</output></label>
+        <label class="row g">G <input type="range" id="chG" min="0" max="0"><output id="chGVal">0</output></label>
+        <label class="row b">B <input type="range" id="chB" min="0" max="0"><output id="chBVal">0</output></label>
+      </div>
+      <label class="row">Low <input type="range" id="lo" min="0" max="20" step="0.1" value="1">
+        <output id="loVal">1%</output></label>
+      <label class="row">High <input type="range" id="hi" min="80" max="100" step="0.1" value="99">
+        <output id="hiVal">99%</output></label>
+      <label class="row">Gamma <input type="range" id="gamma" min="0.3" max="3" step="0.05" value="1">
+        <output id="gammaVal">1.00</output></label>
+      <div class="tools">
+        <button id="fitBtn" title="Fit to window  F">Fit</button>
+        <button id="hideBtn" title="Hide the mask  X">Hide mask</button>
+      </div>
+    </section>
+
+    <section class="help">
+      <h2>Keys</h2>
+      <p><b>1…0</b> pick class · <b>B/E/P/R/G</b> tool · <b>A</b> nudge · <b>[ ]</b> brush size<br><b>G</b> pour colour into an unlabelled area, right-click pours it out<br>
+      <b>right-drag</b> erase · <b>⌘Z</b> undo · <b>⌘S</b> save<br>
+      <b>wheel</b> zoom · <b>space-drag</b> or <b>middle-drag</b> pan · <b>F</b> fit<br>
+      <b>←/→</b> band, or nudge when <b>A</b> is on (<b>⇧</b> = 10 px)<br>
+      <b>C</b> next cube · <b>, .</b> next leg · <b>X</b> hide mask · <b>V</b> diff view<br>
+      polygon: click points, <b>⏎</b> fill, <b>⌫</b> undo point, <b>esc</b> cancel</p>
+    </section>
+  </aside>
+
+  <div id="stage">
+    <canvas id="view"></canvas>
+    <div id="hint" class="hint"></div>
+    <div id="readout" class="readout"></div>
+  </div>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="sheet">
+    <h2>Classes</h2>
+    <p class="dim">Every pixel you paint stores its class number. Anything left
+      unpainted is saved as <b>255</b>, the ignore index.</p>
+    <label class="row">How many classes
+      <input type="number" id="nClasses" min="1" max="254" value="3" style="width:5em">
+      <button id="genClasses">set</button></label>
+    <ul id="classEdit" class="classEdit"></ul>
+    <button id="addClass" class="link">+ add class</button>
+    <p id="modalErr" class="err"></p>
+    <div class="sheetBtns">
+      <button id="cancelClasses">Cancel</button>
+      <button id="saveClasses" class="primary">Save classes</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

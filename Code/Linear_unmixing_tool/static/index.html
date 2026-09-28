@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Linear unmixing</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <h1>Linear unmixing</h1>
+
+  <div class="legpick">
+    <button id="legPrev" title="previous leg (,)">‹</button>
+    <select id="leg"></select>
+    <button id="legNext" title="next leg (.)">›</button>
+  </div>
+  <span class="meta" id="legMeta"></span>
+  <span class="dirty" id="dirty" hidden>unsaved regions</span>
+
+  <nav class="tabs">
+    <button data-pane="regions" class="on">Regions</button>
+    <button data-pane="results">Results</button>
+  </nav>
+  <a id="reportLink" href="/out/report.html" target="_blank" class="ghost">report ↗</a>
+</header>
+
+<!-- ============================ regions ============================ -->
+<main id="pane-regions">
+
+  <aside class="left">
+    <section>
+      <h2>Structures</h2>
+      <ul id="structures" class="structures"></ul>
+      <div class="row">
+        <button id="addStructure" class="ghost">+ component</button>
+        <button id="seed" class="ghost" title="sample regions out of the label mask">seed from mask</button>
+      </div>
+      <div class="row">
+        <button id="clear" class="ghost" title="start from a blank frame">clear regions</button>
+      </div>
+      <p class="note" id="structNote"></p>
+    </section>
+
+    <section>
+      <h2>Tool</h2>
+      <div class="row tools">
+        <button data-tool="brush" class="on" title="brush (B)">brush</button>
+        <button data-tool="box" title="box (R)">box</button>
+        <button data-tool="erase" title="eraser (E)">eraser</button>
+      </div>
+      <label class="slider">size <input type="range" id="brush" min="1" max="60" value="7">
+        <output id="brushOut">7</output></label>
+      <p class="note">right-drag always erases · ⌘Z undo · ⌘S save</p>
+    </section>
+
+    <section>
+      <h2>Unmixing</h2>
+      <label class="field">solver
+        <select id="method">
+          <option value="nnls">NNLS — non-negative (Nuance)</option>
+          <option value="ls">least squares — unconstrained</option>
+        </select></label>
+      <label class="field">region → spectrum
+        <select id="stat">
+          <option value="mean">mean</option>
+          <option value="median">median</option>
+        </select></label>
+      <label class="field">extra component
+        <select id="extra">
+          <option value="none">none</option>
+          <option value="constant">constant (flat offset)</option>
+          <option value="dark">dark (per-channel 1st pct)</option>
+        </select></label>
+      <label class="check"><input type="checkbox" id="normalize"> normalise endmembers to unit length</label>
+      <p class="note">Every version of the leg is unmixed from the same regions,
+        with its own spectra.</p>
+    </section>
+
+    <section>
+      <div class="row">
+        <button id="run" class="primary">Unmix this leg</button>
+        <button id="runAll" class="ghost">all legs</button>
+      </div>
+      <div id="progress" hidden>
+        <div class="bar"><i></i></div>
+        <p class="note" id="progressText"></p>
+        <button id="cancel" class="ghost small">cancel</button>
+      </div>
+      <p class="warn" id="warn"></p>
+    </section>
+  </aside>
+
+  <div class="stage" id="stage">
+    <canvas id="view"></canvas>
+    <div class="hud" id="hud"></div>
+  </div>
+
+  <aside class="right">
+    <section>
+      <h2>Display</h2>
+      <label class="field">version
+        <select id="version"></select></label>
+      <div class="row tools" id="modes">
+        <button data-mode="mean" class="on">mean</button>
+        <button data-mode="band">band</button>
+        <button data-mode="rgb">RGB</button>
+      </div>
+      <label class="slider" id="bandRow" hidden>band
+        <input type="range" id="band" min="0" max="0" value="0">
+        <output id="bandOut"></output></label>
+      <div id="rgbRow" hidden>
+        <label class="slider">R <input type="range" class="rgb" data-i="0" min="0" max="0"><output></output></label>
+        <label class="slider">G <input type="range" class="rgb" data-i="1" min="0" max="0"><output></output></label>
+        <label class="slider">B <input type="range" class="rgb" data-i="2" min="0" max="0"><output></output></label>
+      </div>
+      <label class="slider">low <input type="range" id="lo" min="0" max="20" step="0.5" value="1"><output>1</output></label>
+      <label class="slider">high <input type="range" id="hi" min="80" max="100" step="0.1" value="99"><output>99</output></label>
+      <label class="slider">gamma <input type="range" id="gamma" min="0.4" max="2.5" step="0.05" value="1"><output>1</output></label>
+      <div class="row tools" id="overlays">
+        <button data-ov="rois" class="on" title="show regions (X)">regions</button>
+        <button data-ov="truth" title="show the label mask (V)">truth</button>
+      </div>
+      <label class="slider">overlay <input type="range" id="alpha" min="0" max="100" value="70"><output>70</output></label>
+    </section>
+
+    <section>
+      <h2>Endmembers</h2>
+      <canvas id="spectra" height="190"></canvas>
+      <p class="note" id="spectraNote">Draw a region to measure a spectrum.</p>
+    </section>
+  </aside>
+</main>
+
+<!-- ============================ results ============================ -->
+<main id="pane-results" hidden>
+  <div class="resbar">
+    <div class="row tools scope" id="resScope">
+      <button data-scope="leg" class="on">this leg</button>
+      <button data-scope="all">all legs</button>
+    </div>
+    <label class="field inline" id="pictureField">picture
+      <select id="resImage"></select></label>
+    <label class="field inline" id="sortField">sort by
+      <select id="resSort">
+        <option value="accuracy_outside_rois">accuracy (outside regions)</option>
+        <option value="mean_iou_outside_rois">mean IoU (outside regions)</option>
+        <option value="accuracy">accuracy (all pixels)</option>
+        <option value="residual_rel">residual (fraction of signal)</option>
+        <option value="order">version order</option>
+      </select></label>
+    <label class="check"><input type="checkbox" id="hideDup" checked> hide duplicate cubes</label>
+    <span class="meta" id="resMeta"></span>
+  </div>
+  <div class="grid" id="resGrid"></div>
+  <div class="tablewrap"><table id="resTable"></table>
+    <p class="note" id="resNote"></p></div>
+</main>
+
+<div class="modal" id="modal" hidden><div class="sheet" id="sheet"></div></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

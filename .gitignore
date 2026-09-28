@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# Whitelist-style .gitignore: ignore EVERYTHING, then re-allow only the code
+# and the environment-setup files. Data (.im3 cubes, .heic photos), the venv
+# and Helper_Materials stay local and are never pushed to GitHub.
+# ---------------------------------------------------------------------------
+
+# 1. Ignore everything by default
+/*
+
+# 2. Re-allow the source tree
+!/Code/
+!/Code/**
+
+# 3. Re-allow environment / documentation files kept at the repo root
+!/.gitignore
+!/requirements.txt
+!/README.md
+
+# ---------------------------------------------------------------------------
+# Exclusions that still apply *inside* the whitelisted paths
+# ---------------------------------------------------------------------------
+
+# macOS / editor cruft
+.DS_Store
+._*
+.idea/
+.vscode/
+
+# Python build & cache artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments (also covered by the deny-all above, listed for clarity)
+venv*/
+.venv/
+env/
+
+# Data & large binaries — never commit, regardless of location
+*.im3
+*.heic
+*.tif
+*.tiff
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.zarr/
+*.mat
+*.pt
+*.pth
+*.ckpt
+
+# Local secrets / machine-specific config
+.env
+*.local
